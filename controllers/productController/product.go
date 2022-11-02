@@ -3,26 +3,28 @@ package productcontroller
 import (
 	"encoding/json"
 	"net/http"
+	"rest-api-go/helper"
 	"rest-api-go/models"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
 // var ResponseJson = helper.ResponseJson
+var db = models.DB
+
+var ResponseJson = helper.ResponseJson
 
 func GetAllProducts(w http.ResponseWriter, r *http.Request) {
-	
+
 	var products []models.Product
 
-	db := models.DB
-
-	result, err := db.Query("SELECT * FROM products");
-	 if err != nil {
+	result, err := db.Query("SELECT * FROM products")
+	if err != nil {
 		db.Close()
 		panic(err.Error())
-	 }
+	}
 
-	 for result.Next() {
+	for result.Next() {
 		var data models.Product
 		err := result.Scan(&data.Id, &data.Name, &data.Stock, &data.Price)
 		if err != nil {
@@ -31,29 +33,58 @@ func GetAllProducts(w http.ResponseWriter, r *http.Request) {
 		}
 
 		products = append(products, data)
-	 }
+	}
 
-	 defer result.Close()
-	 json.NewEncoder(w).Encode(products)
-	//  ResponseJson(w, http.StatusOK, products)
+	defer result.Close()
+	//  json.NewEncoder(w).Encode(products)
+	ResponseJson(w, http.StatusOK, products) // Response JSON
 }
 
-// func CreateProduct(w http.ResponseWriter, r *http.Request) {
-// 	var product models.Product
+func AddProduct(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseMultipartForm(4096)
+	if err != nil {
+		panic(err)
+	}
 
-// 	decoder := json.NewDecoder(r.Body)
+	var id int
 
-// 	if err := decoder.Decode(&product); err != nil {
-// 		ResponseError(w, http.StatusInternalServerError, err.Error())
-// 		return
-// 	}
+	result, err := db.Query("SELECT MAX(id) FROM products")
+	if err != nil {
+		db.Close()
+		panic(err)
+	}
 
-// 	defer r.Body.Close()
+	for result.Next() {
+		err := result.Scan(&id)
+		if err != nil {
+			db.Close()
+			panic(err)
+		}
+	}
 
-// 	if err := models.DB.Query(&product).Error; err != nil {
-// 		ResponseError(w, http.StatusInternalServerError, err.Error())
-// 		return
-// 	}
+	result.Close()
 
-// 	ResponseJson(w, http.StatusCreated, product)
-// }
+	productId := id + 1
+
+	stmt, err := db.Prepare("INSERT INTO products(id, name, stock, price) VALUES (?,?,?,?)")
+
+	if err != nil {
+		db.Close()
+		panic(err.Error())
+	}
+
+	name := r.Form.Get("name")
+	stock := r.Form.Get("stock")
+	price := r.Form.Get("price")
+
+	_, err = stmt.Exec(productId, name, stock, price)
+
+	if err != nil {
+		db.Close()
+		panic(err.Error())
+	}
+
+	stmt.Close()
+
+	json.NewEncoder(w).Encode("Added Product Successfully")
+}
