@@ -16,7 +16,7 @@ func main() {
 
 	r.HandleFunc("/products", productcontroller.GetAllProducts).Methods("GET")
 	// r.HandleFunc("/product/{id}", productcontroller.Show).Methods("GET")
-	// r.HandleFunc("/product", productcontroller.CreateProduct).Methods("POST")
+	r.HandleFunc("/product", productcontroller.AddProduct).Methods("POST")
 	// r.HandleFunc("/product/{id}", productcontroller.Update).Methods("PUT")
 	// r.HandleFunc("/product", productcontroller.Delete).Methods("DELETE")
 
