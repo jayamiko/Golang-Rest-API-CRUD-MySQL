@@ -2,46 +2,58 @@ package productcontroller
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"rest-api-go/helper"
 	"rest-api-go/models"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
-var ResponseJson = helper.ResponseJson
-var ResponseError = helper.ResponseError
+// var ResponseJson = helper.ResponseJson
 
 func GetAllProducts(w http.ResponseWriter, r *http.Request) {
+	
 	var products []models.Product
 
-	if err := models.DB.Find(&products).Error; err != nil {
-		ResponseError(w, http.StatusInternalServerError, err.Error())
-		return
-	} else {
-		fmt.Println("Success")
-	}
+	db := models.DB
 
-	ResponseJson(w, http.StatusOK, products)
+	result, err := db.Query("SELECT * FROM products");
+	 if err != nil {
+		db.Close()
+		panic(err.Error())
+	 }
+
+	 for result.Next() {
+		var data models.Product
+		err := result.Scan(&data.Id, &data.Name, &data.Stock, &data.Price)
+		if err != nil {
+			db.Close()
+			panic(err.Error())
+		}
+
+		products = append(products, data)
+	 }
+
+	 defer result.Close()
+	 json.NewEncoder(w).Encode(products)
+	//  ResponseJson(w, http.StatusOK, products)
 }
 
-func CreateProduct(w http.ResponseWriter, r *http.Request) {
-	var product models.Product
+// func CreateProduct(w http.ResponseWriter, r *http.Request) {
+// 	var product models.Product
 
-	decoder := json.NewDecoder(r.Body)
+// 	decoder := json.NewDecoder(r.Body)
 
-	if err := decoder.Decode(&product); err != nil {
-		ResponseError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
+// 	if err := decoder.Decode(&product); err != nil {
+// 		ResponseError(w, http.StatusInternalServerError, err.Error())
+// 		return
+// 	}
 
-	defer r.Body.Close()
+// 	defer r.Body.Close()
 
-	if err := models.DB.Create(&product).Error; err != nil {
-		ResponseError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
+// 	if err := models.DB.Query(&product).Error; err != nil {
+// 		ResponseError(w, http.StatusInternalServerError, err.Error())
+// 		return
+// 	}
 
-	ResponseJson(w, http.StatusCreated, product)
-}
+// 	ResponseJson(w, http.StatusCreated, product)
+// }

@@ -1,21 +1,27 @@
 package models
 
 import (
+	"database/sql"
 	"fmt"
+	"time"
 
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
+	_ "github.com/go-sql-driver/mysql"
 )
 
-var DB *gorm.DB
+// var DB *gorm.DB
 
-func ConnectDatabase() {
-	db, err := gorm.Open(mysql.Open("root:qwerty123@tcp(127.0.0.1:3306)/rest_api_go"))
+func ConnectDatabase() (db *sql.DB) {
+	db, err := sql.Open("mysql", "root:qwerty123@tcp(127.0.0.1:3306)/rest_api_go")
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	} else {
 		fmt.Println("Connection Database Success")
 	}
-	db.AutoMigrate(&Product{})
-	DB = db
+	db.SetConnMaxIdleTime(10 * time.Second)
+	db.SetConnMaxLifetime(60 * time.Second)
+	db.SetMaxOpenConns(5)
+	db.SetMaxIdleConns(5)
+	return db
 }
+
+var DB = ConnectDatabase()
