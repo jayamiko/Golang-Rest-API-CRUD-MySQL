@@ -40,6 +40,32 @@ func GetAllProducts(w http.ResponseWriter, r *http.Request) {
 	ResponseJson(w, http.StatusOK, products) // Response JSON
 }
 
+func GetDetailProduct(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+
+	var data models.Product
+	result, err := db.Query("SELECT * from products WHERE id = ? ", id)
+	if err != nil {
+		db.Close()
+		panic(err.Error())
+	}
+
+	for result.Next() {
+
+		err := result.Scan(&data.Id, &data.Name, &data.Stock, &data.Price)
+		if err != nil {
+			db.Close()
+			panic(err.Error())
+		}
+
+	}
+
+	defer result.Close()
+
+	json.NewEncoder(w).Encode(data)
+
+}
+
 func AddProduct(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseMultipartForm(4096)
 	if err != nil {
@@ -87,4 +113,33 @@ func AddProduct(w http.ResponseWriter, r *http.Request) {
 	stmt.Close()
 
 	json.NewEncoder(w).Encode("Added Product Successfully")
+}
+
+func UpdateProduct(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+
+	err := r.ParseMultipartForm(4096)
+	if err != nil {
+		panic(err)
+	}
+
+	stmt, err := db.Prepare("UPDATE products SET name = ? WHERE id = ?")
+	if err != nil {
+		db.Close()
+		panic(err.Error())
+	}
+
+	name := r.Form.Get("name")
+	// stock := r.Form.Get("stock")
+	// price := r.Form.Get("price")
+
+	_, err = stmt.Exec(name, id)
+	if err != nil {
+		db.Close()
+		panic(err.Error())
+	}
+
+	defer stmt.Close()
+
+	json.NewEncoder(w).Encode("Success")
 }
