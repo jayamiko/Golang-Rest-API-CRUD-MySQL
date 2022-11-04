@@ -18,7 +18,7 @@ func main() {
 	r.HandleFunc("/product", productcontroller.GetDetailProduct).Methods("GET")
 	r.HandleFunc("/product", productcontroller.AddProduct).Methods("POST")
 	r.HandleFunc("/product", productcontroller.UpdateProduct).Methods("PUT")
-	// r.HandleFunc("/product", productcontroller.Delete).Methods("DELETE")
+	r.HandleFunc("/product", productcontroller.DeleteProduct).Methods("DELETE")
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }

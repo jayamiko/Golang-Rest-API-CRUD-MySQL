@@ -63,7 +63,6 @@ func GetDetailProduct(w http.ResponseWriter, r *http.Request) {
 	defer result.Close()
 
 	json.NewEncoder(w).Encode(data)
-
 }
 
 func AddProduct(w http.ResponseWriter, r *http.Request) {
@@ -134,6 +133,26 @@ func UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	// price := r.Form.Get("price")
 
 	_, err = stmt.Exec(name, id)
+	if err != nil {
+		db.Close()
+		panic(err.Error())
+	}
+
+	defer stmt.Close()
+
+	json.NewEncoder(w).Encode("Success")
+}
+
+func DeleteProduct(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+
+	stmt, err := db.Prepare("DELETE FROM products WHERE id = ?")
+	if err != nil {
+		db.Close()
+		panic(err.Error())
+	}
+
+	_, err = stmt.Exec(id)
 	if err != nil {
 		db.Close()
 		panic(err.Error())
